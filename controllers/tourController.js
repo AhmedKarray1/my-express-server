@@ -84,13 +84,46 @@ exports.deleteTour = async (req, res) => {
   }
 };
 
-exports.getTourStats = async(req, res)=>{
-  try{
-    const stats= Tour.aggregate([
+exports.getTourStats = async (req, res) => {
+  try {
+    const stats = await Tour.aggregate([
+      {
+        $match: { ratingAverage: { $gte: 4.5 } },
+      },
+      {
+        $group: {
+          _id: "$difficulty",
+          numTours: { $sum: 1 },
+          numRating: { $sum: "$ratingQuantity" },
+          avgRating: { $avg: "$ratingAverage" },
+          avgPrice: { $avg: "$price" },
+          minPrice: { $min: "$price" },
+          maxPrice: { $max: "$price" },
+        },
+      },
+      {
+        $sort: { avgPrice: 1 },
+      },
+      {
+        $match: { _id: { $ne: "easy" } },
+      },
+    ]);
+    console.log(stats);
 
+    res.status(200).json({
+      message: "success",
+      data: { stats },
+    });
+  } catch (err) {}
+};
+exports.getMonthlyPlan = async (req, res) => {
+  try {
+    const year = req.params.year * 1;
+    const plan = await Tour.aggregate([{ $unwind: "$startDtaes" }]);
 
-
-    ])
-  }
-
+    res.status(200).json({
+      message: "success",
+      data: { plan },
+    });
+  } catch (err) {}
 };
